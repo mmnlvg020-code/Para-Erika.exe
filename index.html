@@ -3,29 +3,645 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal_v4.0</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Terminal Hacker</title>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* CRT Scanlines */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Flicker */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.02; }
+            50% { opacity: 0.05; }
+            100% { opacity: 0.02; }
+        }
+
+        /* Efecto Glitch más sutil para que sea legible */
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            15% { transform: translate(-2px, 2px); }
+            30% { transform: translate(0); }
+            70% { transform: translate(0); }
+            85% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        .glitch-effect {
+            animation: glitch-anim 0.4s infinite;
+            filter: drop-shadow(3px 0 0 rgba(255,0,0,0.6)) drop-shadow(-3px 0 0 rgba(0,0,255,0.6));
+        }
+
+        /* Alarma roja de fondo para el hackeo */
+        @keyframes red-alarm {
+            0% { background-color: #0a0a0a; }
+            50% { background-color: #330000; }
+            100% { background-color: #0a0a0a; }
+        }
+
+        /* Animación para apagar la consola (estilo TV vieja apagándose) */
+        @keyframes turn-off {
+            0% { transform: scale(1, 1); opacity: 1; filter: brightness(1); }
+            40% { transform: scale(1, 0.005); opacity: 1; filter: brightness(10); }
+            100% { transform: scale(0, 0.005); opacity: 0; filter: brightness(0); }
+        }
+        .turn-off-anim {
+            animation: turn-off 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            transform-origin: center center;
+        }
+
+        /* Background container */
+        #sunflowers-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Sunflowers (Ahora usando transiciones para movimiento aleatorio real) */
+        .bg-sunflower {
+            position: absolute;
+            opacity: 0;
+            transition: left 6s linear, top 6s linear, transform 6s ease-in-out, opacity 2s ease-in;
+            filter: drop-shadow(0 0 10px rgba(255, 200, 0, 0.6));
+            will-change: transform, left, top, opacity;
+        }
+
+        /* Container */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            background: rgba(5, 5, 5, 0.75); 
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.05);
+            backdrop-filter: blur(3px);
+        }
+
+        .line {
+            margin-bottom: 6px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            text-shadow: 1px 1px 3px #000, 0px 0px 5px rgba(0, 255, 0, 0.3); 
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background-color: #00ff00;
+            vertical-align: text-bottom;
+            animation: blink 1s step-end infinite;
+            margin-left: 5px;
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Colors */
+        .system { color: #00ff00; }
+        .error { color: #ff3333; text-shadow: 0 0 5px rgba(255,51,51,0.4), 1px 1px 2px #000; } 
+        .warning { color: #ffaa00; text-shadow: 0 0 5px rgba(255,170,0,0.4), 1px 1px 2px #000; } 
+        .success { color: #00ffff; text-shadow: 0 0 5px rgba(0,255,255,0.4), 1px 1px 2px #000; }
+        .highlight { color: #ffffff; font-weight: bold; text-shadow: 0 0 8px #fff, 1px 1px 2px #000; }
+        .sunflower { color: #ffdd00; font-weight: bold; text-shadow: 0 0 8px #ffaa00, 1px 1px 2px #000; }
+
+        #login-screen {
+            padding-top: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        input[type="text"] {
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(0,255,0,0.3);
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            outline: none;
+            width: 180px;
+            text-align: center;
+            text-transform: capitalize;
+            text-shadow: 1px 1px 2px #000, 0 0 5px #00ff00;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-bottom: 2px solid #00ff00;
+            box-shadow: 0 5px 5px -5px #00ff00;
+        }
+
+        #login-feedback {
+            margin-top: 20px;
+            min-height: 20px;
+        }
+
+        #terminal-screen {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <!-- Efecto CRT (Líneas de escaneo retro) controlado por CSS -->
-    
-    <!-- Fondo de girasoles -->
     <div id="sunflowers-bg"></div>
 
-    <!-- Pantalla de Inicio -->
     <div class="container" id="login-screen">
         <div class="line warning">> ALERTA: SISTEMA DE ACCESO RESTRINGIDO</div>
         <div class="line system">Este software fue desarrollado EXCLUSIVAMENTE para alguien en especial.</div>
         <div class="line system">La base de datos contiene un único nombre de usuario válido.</div>
         <br>
-        <div class="line">> Ingresa tu nombre y presiona ENTER para verificar identidad:</div>
-        <div class="line">[ <input type="text" id="name-input" autocomplete="off" spellcheck="false" autofocus> ]</div>
+        <div class="line">> Ingresa tu nombre y presiona ENTER o toca el botón para verificar identidad:</div>
+        <div class="line" style="display: flex; align-items: center; margin-top: 5px; flex-wrap: wrap;">
+            [ <input type="text" id="name-input" autocomplete="off" spellcheck="false" autofocus> ]
+            <button id="enter-btn" style="background: transparent; color: #00ff00; border: 1px solid #00ff00; padding: 2px 8px; margin-left: 10px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: inset 0 0 5px #00ff00;">ACCEDER</button>
+        </div>
         <div id="login-feedback"></div>
     </div>
 
-    <!-- Consola Hacker -->
     <div class="container" id="terminal-screen"></div>
 
-    <script src="script.js"></script>
+    <script>
+        const nameInput = document.getElementById('name-input');
+        const loginFeedback = document.getElementById('login-feedback');
+        const loginScreen = document.getElementById('login-screen');
+        const terminalScreen = document.getElementById('terminal-screen');
+        const terminal = document.getElementById('terminal-screen');
+        
+        // IMPORTANTE: Limpiar el estado del input al recargar la página.
+        // Los navegadores a veces recuerdan que se deshabilitó durante la animación.
+        nameInput.disabled = false;
+        nameInput.value = '';
+        setTimeout(() => nameInput.focus(), 100);
+        
+        const funnyErrors = [
+            "> ERROR: Tú no eres la persona genial que busco. Intento bloqueado.",
+            "> ACCESO DENEGADO: Nivel de buena vibra insuficiente para ese nombre.",
+            "> ALERTA DE INTRUSO: El sistema detecta que no eres ella. Vuelve a intentarlo.",
+            "> ERROR 401: Este software es VIP, y ese nombre no está en la lista de invitados.",
+            "> SEGURIDAD: Nombre no reconocido. Deberías llamarte Erika para entrar aquí."
+        ];
+
+        nameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                processLogin();
+            }
+        });
+
+        document.getElementById('enter-btn').addEventListener('click', processLogin);
+
+        function processLogin() {
+            const name = nameInput.value.trim().toLowerCase();
+            
+            if (name === 'erika') {
+                // 1. FREEZE EFFECT (Para asustarla)
+                nameInput.disabled = true;
+                document.getElementById('enter-btn').disabled = true;
+                
+                // Simulamos que el celular se trabó por 2.5 segundos sin dar respuesta
+                setTimeout(() => {
+                    // 2. EFECTO HACKEO CINEMATOGRÁFICO
+                    const loginScreenEl = document.getElementById('login-screen');
+                    loginScreenEl.classList.add('glitch-effect');
+                    document.body.style.animation = 'red-alarm 0.5s infinite'; // Fondo parpadeando en rojo
+                    
+                    loginScreenEl.innerHTML = `
+                        <div class="error" style="text-align: center; margin-top: 20px;">
+                            <h2 style="color: red; text-shadow: 0 0 15px red; margin: 5px 0;">! BRECHA DE SEGURIDAD !</h2>
+                            <h4 style="margin: 5px 0;">EXTRAYENDO FOTOS Y MENSAJES...</h4>
+                            
+                            <!-- Barra de progreso falsa -->
+                            <div style="margin: 10px auto; width: 90%; border: 2px solid red; height: 18px; position: relative;">
+                                <div id="hack-bar" style="width: 0%; height: 100%; background-color: red; transition: width 0.1s linear;"></div>
+                                <span id="hack-percent" style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; font-weight: bold; line-height: 18px; text-shadow: 1px 1px 2px black;">0%</span>
+                            </div>
+                            
+                            <!-- Código basura bajando -->
+                            <div id="hack-text" style="word-wrap: break-word; font-size: 11px; font-family: monospace; color: #ff3333; height: 75px; overflow: hidden; opacity: 0.8; text-align: left;"></div>
+                        </div>
+                    `;
+                    
+                    const hackTextDiv = document.getElementById('hack-text');
+                    const hackBar = document.getElementById('hack-bar');
+                    const hackPercent = document.getElementById('hack-percent');
+                    
+                    let progress = 0;
+                    let hackInterval = setInterval(() => {
+                        // Basura Hexadecimal
+                        let garbage = "";
+                        const chars = "0123456789ABCDEF!@#$%&*";
+                        for(let i=0; i<60; i++) {
+                            garbage += chars.charAt(Math.floor(Math.random() * chars.length));
+                        }
+                        
+                        // Nombres de archivos falsos
+                        const fakeFiles = ["IMG_4091.jpg", "chats_whatsapp.db", "passwords.txt", "notas_secretas.md", "fotos_borradas.zip"];
+                        const randomFile = fakeFiles[Math.floor(Math.random() * fakeFiles.length)];
+                        
+                        // Insertamos el texto nuevo arriba usando concatenación estándar para evitar errores de sintaxis
+                        hackTextDiv.innerText = "[" + Math.random().toString(36).substring(2,8).toUpperCase() + "] DECRYPTING: " + randomFile + "...\\n" + garbage + "\\n" + hackTextDiv.innerText.substring(0, 250);
+                        
+                        // Progreso de la barra (llega al ~99% justo antes de cortar)
+                        progress += 3 + (Math.random() * 3);
+                        if(progress > 99) progress = 99;
+                        
+                        hackBar.style.width = progress + '%';
+                        hackPercent.innerText = Math.floor(progress) + '%';
+                        
+                    }, 100);
+
+                    // 3. REVELACIÓN DE LA BROMA
+                    setTimeout(() => {
+                        clearInterval(hackInterval);
+                        document.body.style.animation = 'none'; // Quitar alarma roja
+                        document.body.style.backgroundColor = '#0a0a0a'; // Regresar fondo a la normalidad
+                        
+                        const loginScreenEl = document.getElementById('login-screen');
+                        loginScreenEl.classList.remove('glitch-effect');
+                        
+                        loginScreenEl.innerHTML = `
+                            <div class="highlight" style="font-size: 16px; text-align: center; margin-top: 80px; line-height: 2;">
+                                > JAJAJA es broma.<br><br>
+                                > Pero en serio, no le abras links a desconocidos.<br>
+                                > Yo es que soy buena gente. 😇<br><br>
+                                <span class="system">> Reanudando sistema... <span class="cursor"></span></span>
+                            </div>
+                        `;
+                        
+                        // 4. TRANSICIÓN AL REPORTE REAL
+                        setTimeout(() => {
+                            document.getElementById('login-screen').style.display = 'none';
+                            terminalScreen.style.display = 'block';
+                            startSequence();
+                        }, 3500);
+                        
+                    }, 2500); // Duración del hackeo falso
+                    
+                }, 1500); // Duración del "freeze" falso
+                
+            } else if (name === '') {
+                loginFeedback.innerHTML = "<span class='error'>> ERROR: Por favor ingresa caracteres válidos.</span>";
+            } else {
+                const randomError = funnyErrors[Math.floor(Math.random() * funnyErrors.length)];
+                loginFeedback.innerHTML = `<span class='error'>${randomError}</span>`;
+                nameInput.value = '';
+            }
+        }
+
+        // Motor de Inteligencia Artificial para generar flores en SVG
+        function generateFlowerSVG(input) {
+            const str = input.toLowerCase();
+            let color = "#FFD700"; // default amarillo
+            let coreColor = "#8B4513"; // default café
+            let type = "sunflower"; 
+
+            // Detección de color
+            if (str.includes("roj")) color = "#FF0000";
+            else if (str.includes("azul")) color = "#0088FF";
+            else if (str.includes("blanc")) color = "#FFFFFF";
+            else if (str.includes("rosad") || str.match(/\brosa\b/)) color = "#FF69B4";
+            else if (str.includes("morad") || str.includes("lila")) color = "#8A2BE2";
+            else if (str.includes("negr")) color = "#333333";
+            else if (str.includes("amarill")) color = "#FFD700";
+            
+            // Detección de tipo
+            if (str.includes("rosa")) type = "rose";
+            if (str.includes("tulipan") || str.includes("tulipán") || str.includes("tulipanes")) type = "tulip";
+            if (str.includes("margarita") || str.includes("margaritas")) type = "daisy";
+            if (str.includes("girasol") || str.includes("girasoles")) { type = "sunflower"; color = "#FFD700"; }
+            
+            // Si dijo "rosa" color "rosa" pero era por la flor, por defecto roja si no especificó más
+            if (type === "rose" && color === "#FFD700") color = "#FF0000";
+            if (type === "tulip" && color === "#FFD700") color = "#FF1493";
+            if (type === "daisy" && color === "#FFD700") color = "#FFFFFF";
+
+            if (type === "rose") {
+                return `<svg viewBox="0 0 13 13" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="width:100%; height:100%;">
+                  <rect fill="${color}" x="5" y="1" width="3" height="1"/>
+                  <rect fill="${color}" x="3" y="2" width="7" height="1"/>
+                  <rect fill="${color}" x="2" y="3" width="9" height="1"/>
+                  <rect fill="${color}" x="2" y="4" width="9" height="1"/>
+                  <rect fill="${color}" x="3" y="5" width="7" height="1"/>
+                  <rect fill="${color}" x="4" y="6" width="5" height="1"/>
+                  <rect fill="#000000" opacity="0.3" x="5" y="3" width="3" height="2"/>
+                  <rect fill="#228B22" x="6" y="7" width="1" height="6"/>
+                  <rect fill="#228B22" x="7" y="8" width="2" height="1"/>
+                  <rect fill="#228B22" x="4" y="10" width="2" height="1"/>
+                </svg>`;
+            } else if (type === "tulip") {
+                return `<svg viewBox="0 0 13 13" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="width:100%; height:100%;">
+                  <rect fill="${color}" x="3" y="1" width="2" height="2"/>
+                  <rect fill="${color}" x="8" y="1" width="2" height="2"/>
+                  <rect fill="${color}" x="5" y="2" width="3" height="1"/>
+                  <rect fill="${color}" x="2" y="3" width="9" height="1"/>
+                  <rect fill="${color}" x="2" y="4" width="9" height="1"/>
+                  <rect fill="${color}" x="3" y="5" width="7" height="1"/>
+                  <rect fill="${color}" x="4" y="6" width="5" height="1"/>
+                  <rect fill="#228B22" x="6" y="7" width="1" height="6"/>
+                  <rect fill="#228B22" x="7" y="9" width="1" height="3"/>
+                </svg>`;
+            } else if (type === "daisy") {
+                return `<svg viewBox="0 0 13 13" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="width:100%; height:100%;">
+                  <rect fill="${color}" x="5" y="1" width="3" height="2"/>
+                  <rect fill="${color}" x="2" y="3" width="9" height="1"/>
+                  <rect fill="${color}" x="1" y="4" width="11" height="3"/>
+                  <rect fill="${color}" x="2" y="7" width="9" height="1"/>
+                  <rect fill="${color}" x="5" y="8" width="3" height="2"/>
+                  <rect fill="#FFD700" x="5" y="4" width="3" height="3"/>
+                  <rect fill="#228B22" x="6" y="10" width="1" height="3"/>
+                </svg>`;
+            } else {
+                return `<svg viewBox="0 0 13 13" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="width:100%; height:100%;">
+                  <rect fill="${color}" x="5" y="0" width="3" height="1"/>
+                  <rect fill="${color}" x="4" y="1" width="5" height="1"/>
+                  <rect fill="${color}" x="2" y="2" width="9" height="1"/>
+                  <rect fill="${color}" x="1" y="3" width="11" height="1"/>
+                  <rect fill="${color}" x="0" y="4" width="13" height="1"/>
+                  <rect fill="${color}" x="0" y="5" width="13" height="1"/>
+                  <rect fill="${color}" x="0" y="6" width="13" height="1"/>
+                  <rect fill="${color}" x="1" y="7" width="11" height="1"/>
+                  <rect fill="${color}" x="2" y="8" width="9" height="1"/>
+                  <rect fill="${color}" x="4" y="9" width="5" height="1"/>
+                  <rect fill="${color}" x="5" y="10" width="3" height="1"/>
+                  <rect fill="${coreColor}" x="5" y="4" width="3" height="3"/>
+                  <rect fill="${coreColor}" x="4" y="5" width="5" height="1"/>
+                  <rect fill="#228B22" x="6" y="11" width="1" height="2"/>
+                </svg>`;
+            }
+        }
+
+        function bloomSunflowers(customSvg) {
+            const bg = document.getElementById('sunflowers-bg');
+            
+            function createSunflower() {
+                const sf = document.createElement('div');
+                sf.className = 'bg-sunflower';
+                sf.innerHTML = customSvg;
+                
+                let currentLeft = Math.random() * 100;
+                let currentTop = Math.random() * 100;
+                let currentRot = Math.random() * 360;
+                
+                sf.style.left = currentLeft + 'vw';
+                sf.style.top = currentTop + 'vh';
+                sf.style.transform = `scale(0.1) rotate(${currentRot - 45}deg)`;
+                sf.style.opacity = '0';
+                
+                const size = Math.random() * 60 + 30; // Flores más grandes para cubrir más espacio
+                sf.style.width = size + 'px';
+                sf.style.height = size + 'px';
+                
+                const depth = Math.random();
+                sf.style.zIndex = Math.floor(depth * 10) * -1;
+                
+                bg.appendChild(sf);
+                
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        sf.style.opacity = '0.6';
+                        sf.style.transform = `scale(1) rotate(${currentRot}deg)`;
+                    });
+                });
+
+                const moveInterval = setInterval(() => {
+                    currentLeft += (Math.random() * 20 - 10); 
+                    currentTop += (Math.random() * 20 - 10);  
+                    currentRot += (Math.random() * 90 - 45);   
+                    
+                    if(currentLeft < -10) currentLeft = 110;
+                    if(currentLeft > 110) currentLeft = -10;
+                    if(currentTop < -10) currentTop = 110;
+                    if(currentTop > 110) currentTop = -10;
+                    
+                    if (sf.parentNode) {
+                        sf.style.left = currentLeft + 'vw';
+                        sf.style.top = currentTop + 'vh';
+                        sf.style.transform = `scale(1) rotate(${currentRot}deg)`;
+                    } else {
+                        clearInterval(moveInterval);
+                    }
+                }, 4000 + (Math.random() * 2000));
+            }
+            
+            // Explosión inicial mucho más agresiva
+            for(let i = 0; i < 150; i++) {
+                setTimeout(createSunflower, i * 30 + (Math.random() * 50)); 
+            }
+
+            // Nacimiento ultra rápido (12 flores por segundo) hasta llegar a 800
+            setInterval(() => {
+                if (bg.children.length > 800) {
+                    const oldest = bg.firstElementChild;
+                    oldest.style.opacity = '0';
+                    setTimeout(() => { if (oldest.parentNode) bg.removeChild(oldest); }, 2000);
+                }
+                createSunflower();
+            }, 80);  
+        }
+
+        function typeLine(lineData) {
+            return new Promise(resolve => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'line ' + lineData.class;
+                terminal.appendChild(lineDiv);
+                
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                terminal.appendChild(cursor);
+
+                let charIndex = 0;
+                function typeChar() {
+                    if (charIndex < lineData.text.length) {
+                        lineDiv.innerHTML += lineData.text.charAt(charIndex);
+                        charIndex++;
+                        
+                        const typeDelay = Math.random() * 35 + 15; 
+                        setTimeout(typeChar, typeDelay);
+                    } else {
+                        setTimeout(() => {
+                            cursor.remove();
+                            resolve();
+                        }, lineData.delayAfter || 300);
+                    }
+                }
+                
+                typeChar();
+            });
+        }
+
+        function askUser(questionText) {
+            return new Promise(resolve => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'line warning';
+                terminal.appendChild(lineDiv);
+                
+                let charIndex = 0;
+                function typeChar() {
+                    if (charIndex < questionText.length) {
+                        lineDiv.innerHTML += questionText.charAt(charIndex);
+                        charIndex++;
+                        setTimeout(typeChar, Math.random() * 35 + 15);
+                    } else {
+                        const inputContainer = document.createElement('div');
+                        inputContainer.className = 'line';
+                        inputContainer.style.display = 'flex';
+                        inputContainer.style.alignItems = 'center';
+                        inputContainer.style.flexWrap = 'wrap';
+                        inputContainer.style.marginTop = '5px';
+                        inputContainer.innerHTML = `
+                            <span class="system">> [ </span> 
+                            <input type="text" autocomplete="off" spellcheck="false" class="interactive-input" style="background:transparent; border:none; border-bottom:1px solid #00ff00; color:#00ff00; font-family:'Courier New', monospace; font-size:14px; outline:none; margin-left:5px; flex-grow:1; text-shadow:0 0 5px #00ff00;">
+                            <span class="system" style="margin-left:5px;"> ]</span>
+                            <button class="interactive-btn" style="background:transparent; color:#00ff00; border:1px solid #00ff00; padding:2px 8px; margin-left:10px; font-family:'Courier New', monospace; font-size:14px; cursor:pointer; text-shadow:0 0 5px #00ff00; box-shadow:inset 0 0 5px #00ff00;">ENVIAR</button>
+                        `;
+                        terminal.appendChild(inputContainer);
+                        
+                        const inputEl = inputContainer.querySelector('.interactive-input');
+                        const btnEl = inputContainer.querySelector('.interactive-btn');
+                        
+                        inputEl.focus();
+                        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                        
+                        function submitAns() {
+                            const val = inputEl.value.trim();
+                            if(val) {
+                                inputEl.disabled = true;
+                                btnEl.disabled = true;
+                                btnEl.style.opacity = '0.5';
+                                resolve(val);
+                            }
+                        }
+                        
+                        inputEl.addEventListener('keypress', (e) => { if(e.key === 'Enter') submitAns(); });
+                        btnEl.addEventListener('click', submitAns);
+                    }
+                }
+                typeChar();
+            });
+        }
+
+        async function startSequence() {
+            const isReturningUser = localStorage.getItem('erika_visited');
+            let welcomeMessage = "Autenticación exitosa. Es un gusto tenerte por primera vez aquí, Erika.";
+            if (isReturningUser) {
+                welcomeMessage = "Autenticación exitosa. Bienvenida de nuevo, Erika.";
+            } else {
+                localStorage.setItem('erika_visited', 'true');
+            }
+
+            const metricsPool = [
+                { text: "  [Belleza] ....... 99.9% (FUERA DE ESCALA)", class: "success", delayAfter: 800 },
+                { text: "  [Sentido Humor] . 100% (NIVEL PROFESIONAL)", class: "success", delayAfter: 800 },
+                { text: "  [Sonrisa] ....... 100% (RIESGO DE DESLUMBRAMIENTO)", class: "success", delayAfter: 800 },
+                { text: "  [Estilo] ........ 100% (IMPECABLE)", class: "success", delayAfter: 800 },
+                { text: "  [Buena Vibra] ... Nivel 'Ilumina el cuarto'", class: "success", delayAfter: 800 },
+                { text: "  [Ternura] ....... 85% (LETAL A CORTO ALCANCE)", class: "success", delayAfter: 800 },
+                { text: "  [Mirada] ........ 100% (RIESGO DE HIPNOSIS)", class: "success", delayAfter: 800 },
+                { text: "  [Originalidad] .. 99% (SÚPER RARA DE ENCONTRAR)", class: "success", delayAfter: 800 }
+            ];
+            const selectedMetrics = metricsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+            const conclusionsPool = [
+                { text: "  Eres oficialmente la persona más difícil de ignorar en todo el radar.", class: "success", delayAfter: 1200 },
+                { text: "  El software concluye que tu nivel de misterio y encanto es sumamente intrigante.", class: "success", delayAfter: 1200 },
+                { text: "  Resultado: 10/10, un perfil altamente recomendado para seguir conociendo.", class: "success", delayAfter: 1200 },
+                { text: "  El escáner indica que haberte cruzado ha sido un descubrimiento excepcional.", class: "success", delayAfter: 1200 },
+                { text: "  Veredicto del sistema: Tienes la rara cualidad de hacer que el tiempo pase volando.", class: "success", delayAfter: 1200 },
+                { text: "  Análisis profundo: Tu vibra es un respiro de aire fresco en un mundo saturado.", class: "success", delayAfter: 1200 },
+                { text: "  Evaluación final: Eres la mezcla perfecta entre ternura, locura y buena plática.", class: "success", delayAfter: 1200 },
+                { text: "  Nota del desarrollador: Definitivamente alguien por quien vale la pena hackear el sistema.", class: "highlight", delayAfter: 1500 },
+                { text: "  Reporte adicional: Tienes una sonrisa que debería venir con advertencia de deslumbramiento.", class: "success", delayAfter: 1200 }
+            ];
+            // Ahora seleccionamos 3 conclusiones para formar un párrafo mucho más detallado
+            const selectedConclusions = conclusionsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+            selectedConclusions.push({ text: "  ------------------------------------------------", class: "system", delayAfter: 500 });
+            selectedConclusions.push({ text: "  Fin del reporte.", class: "success", delayAfter: 2000 });
+
+            // INICIO DE LA SECUENCIA
+            await typeLine({ text: "Conectando al servidor local...", class: "system", delayAfter: 600 });
+            await typeLine({ text: welcomeMessage, class: "success", delayAfter: 800 });
+            await typeLine({ text: "------------------------------------------------", class: "system", delayAfter: 500 });
+            
+            await typeLine({ text: "> Iniciando escaneo de perfil de usuario...", class: "system", delayAfter: 1200 });
+            await typeLine({ text: "  [####################] 100% CARGADO", class: "success", delayAfter: 600 });
+            await typeLine({ text: "> Analizando métricas principales:", class: "system", delayAfter: 1000 });
+            
+            for (let m of selectedMetrics) { 
+                await typeLine(m); 
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+            
+            // PREGUNTA ÚNICA (FLORES)
+            await typeLine({ text: "------------------------------------------------", class: "system", delayAfter: 500 });
+            const flor = await askUser("> VERIFICACIÓN VISUAL: ¿Cuál es su flor favorita?");
+            await typeLine({ text: "> RESPUESTA ACEPTADA. Procesando algoritmo de detalles visuales botánicos...", class: "success", delayAfter: 1200 });
+            
+            // INYECTAMOS FLORES DINÁMICAS
+            const svgToDraw = generateFlowerSVG(flor);
+            bloomSunflowers(svgToDraw);
+            
+            await typeLine({ text: "> Desplegando campo virtual personalizado...", class: "highlight", delayAfter: 1500 });
+            await typeLine({ text: "------------------------------------------------", class: "system", delayAfter: 500 });
+            
+            await typeLine({ text: "> CONCLUSIÓN DEL DIAGNÓSTICO:", class: "highlight", delayAfter: 1000 });
+            for (let c of selectedConclusions) { 
+                await typeLine(c); 
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+            
+            const hour = new Date().getHours();
+            let timeGreeting = "un día increíble";
+            if (hour >= 12 && hour < 19) timeGreeting = "una excelente tarde";
+            else if (hour >= 19 || hour < 5) timeGreeting = "una linda noche";
+            
+            await typeLine({ text: "> Desconectando servidor... Que tengas " + timeGreeting + ".", class: "system", delayAfter: 0 });
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            
+            const finalCursor = document.createElement('span');
+            finalCursor.className = 'cursor';
+            terminal.appendChild(finalCursor);
+            
+            setTimeout(() => {
+                terminal.classList.add('turn-off-anim');
+            }, 7000);
+        }
+    </script>
 </body>
 </html>
