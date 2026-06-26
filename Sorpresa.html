@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal_v4.0</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Efecto CRT (Líneas de escaneo retro) controlado por CSS -->
+    
+    <!-- Fondo de girasoles -->
+    <div id="sunflowers-bg"></div>
+
+    <!-- Pantalla de Inicio -->
+    <div class="container" id="login-screen">
+        <div class="line warning">> ALERTA: SISTEMA DE ACCESO RESTRINGIDO</div>
+        <div class="line system">Este software fue desarrollado EXCLUSIVAMENTE para alguien en especial.</div>
+        <div class="line system">La base de datos contiene un único nombre de usuario válido.</div>
+        <br>
+        <div class="line">> Ingresa tu nombre y presiona ENTER para verificar identidad:</div>
+        <div class="line">[ <input type="text" id="name-input" autocomplete="off" spellcheck="false" autofocus> ]</div>
+        <div id="login-feedback"></div>
+    </div>
+
+    <!-- Consola Hacker -->
+    <div class="container" id="terminal-screen"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
