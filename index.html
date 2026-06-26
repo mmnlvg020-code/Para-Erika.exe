@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal Hacker</title>
+    <title>Para-Erika.exe</title>
     <style>
         body {
             background-color: #0a0a0a;
@@ -407,6 +407,39 @@
             }
         }
 
+        function getFlowerMeaning(input) {
+            const str = input.toLowerCase();
+            if (str.includes("rosa")) {
+                if (str.includes("blanca")) return "  Análisis botánico: Las rosas blancas reflejan paz, pureza y una lealtad genuina.";
+                if (str.includes("amarilla")) return "  Análisis botánico: Las rosas amarillas gritan alegría, amistad y un brillo inconfundible.";
+                if (str.includes("rosad") || (str.match(/\brosa\b/) && str.split(' ').length > 1)) return "  Análisis botánico: Las rosas rosadas muestran una personalidad dulce, admiración y mucha ternura.";
+                return "  Análisis botánico: Las rosas rojas denotan una pasión profunda, intensidad y un romanticismo clásico innegable.";
+            }
+            if (str.includes("tulipan") || str.includes("tulipán") || str.includes("tulipanes")) {
+                if (str.includes("amarillo")) return "  Análisis botánico: Los tulipanes amarillos dicen que tienes una sonrisa que ilumina cualquier lugar.";
+                if (str.includes("blanco")) return "  Análisis botánico: Los tulipanes blancos reflejan paz interior, perdón y una vibra súper tranquila.";
+                return "  Análisis botánico: Los tulipanes representan el amor perfecto, elegancia y una personalidad que siempre sabe destacar.";
+            }
+            if (str.includes("margarita")) {
+                return "  Análisis botánico: Las margaritas significan inocencia, alegría pura y un espíritu libre. Alguien que sabe disfrutar lo simple.";
+            }
+            if (str.includes("girasol") || str.includes("girasoles")) {
+                return "  Análisis botánico: Los girasoles siempre buscan la luz. Eres una persona radiante, cálida y llena de una energía envidiable.";
+            }
+            if (str.includes("orquidea") || str.includes("orquídea")) {
+                return "  Análisis botánico: Las orquídeas son sinónimo de misterio, belleza exótica y mucha fuerza interior.";
+            }
+            
+            if (str.includes("azul")) return "  Análisis botánico: El azul en la botánica significa tranquilidad, confianza y una paz mental profunda.";
+            if (str.includes("morad") || str.includes("lila")) return "  Análisis botánico: Los tonos morados indican creatividad, magia y un toque muy original.";
+            if (str.includes("amarill")) return "  Análisis botánico: Las flores amarillas son símbolo definitivo de felicidad radiante y energía súper positiva.";
+            if (str.includes("blanc")) return "  Análisis botánico: Las flores blancas revelan un corazón puro, transparencia y una paz enorme.";
+            if (str.includes("roj")) return "  Análisis botánico: El rojo siempre será el color de la fuerza, la pasión y un corazón que late fuerte.";
+            if (str.includes("negr")) return "  Análisis botánico: ¿Flores negras? Alguien con un misterio súper atractivo y una elegancia muy profunda.";
+
+            return "  Análisis botánico: Esa flor revela que tienes una sensibilidad única y un gusto muy particular e interesante.";
+        }
+
         function bloomSunflowers(customSvg) {
             const bg = document.getElementById('sunflowers-bg');
             
@@ -616,6 +649,9 @@
             // INYECTAMOS FLORES DINÁMICAS
             const svgToDraw = generateFlowerSVG(flor);
             bloomSunflowers(svgToDraw);
+            
+            const flowerMeaning = getFlowerMeaning(flor);
+            selectedConclusions.unshift({ text: flowerMeaning, class: "sunflower", delayAfter: 1500 });
             
             await typeLine({ text: "> Desplegando campo virtual personalizado...", class: "highlight", delayAfter: 1500 });
             await typeLine({ text: "------------------------------------------------", class: "system", delayAfter: 500 });
